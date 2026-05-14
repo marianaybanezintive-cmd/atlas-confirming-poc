@@ -20,6 +20,16 @@ let participants = [
     { id: 6, tipo: 'Proveedor', ruc: '80022222-4', razon: 'Limpieza Total SRL', email: 'admin@limpiezatotal.com.py', telefono: '+595 21 222333', monedas: ['GS'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: false },
 ];
 
+let abmUsers = [
+    { id: 1, nombre: 'Juan', apellido: 'Pérez', email: 'jperez@retail.com.py', tel: '+595 981 111222', ente: 'Retail S.A.', tipo: 'Admin' },
+    { id: 2, nombre: 'Maria', apellido: 'Gomez', apellido: 'Gomez', email: 'mgomez@tech.com.py', tel: '+595 971 333444', ente: 'Tech Solutions S.A.', tipo: 'Operador' }
+];
+
+let abmRoles = [
+    { id: 1, dominio: 'Banco', rol: 'Administrador Senior', permisos: 'Acceso total, ABM, Reportes, Auditoría' },
+    { id: 2, dominio: 'EGP', rol: 'Operador de Pagos', permisos: 'Carga de facturas, Consulta de estados' }
+];
+
 let nextParticipantId = 7;
 let editingParticipantId = null;
 let currentSimulationInvoice = null;
@@ -62,9 +72,29 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
         document.getElementById(targetId).classList.add('active');
         document.getElementById('page-title').textContent = item.querySelector('span').textContent;
         if (targetId === 'dashboard-view') initDashboardChart();
-        if (targetId === 'abm-view') renderParticipants();
+        if (targetId === 'abm-view') {
+            switchAbmTab('entes'); // Siempre forzar Entes al entrar por el sidebar
+            renderParticipants();
+            renderUsers();
+            renderRoles();
+        }
     });
 });
+
+function switchAbmTab(tab) {
+    // UI Tabs
+    document.querySelectorAll('.abm-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.abm-tab[data-tab="tab-${tab}"]`).classList.add('active');
+
+    // UI Content
+    document.querySelectorAll('.abm-tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+
+    // UI Buttons
+    document.getElementById('btn-nuevo-ente').classList.toggle('hidden', tab !== 'entes');
+    document.getElementById('btn-nuevo-usuario').classList.toggle('hidden', tab !== 'usuarios');
+    document.getElementById('btn-nuevo-rol').classList.toggle('hidden', tab !== 'roles');
+}
 
 function switchReportTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -176,6 +206,7 @@ function renderParticipants() {
 }
 
 function openAbmModal(participantId = null) {
+    switchAbmTab('entes'); // Forzar pestaña Entes al editar/crear ente
     editingParticipantId = participantId;
     const form = document.getElementById('abm-form');
     form.reset();
@@ -497,4 +528,86 @@ function revertInvoice(invoiceId) {
         renderInvoices();
         showCustomAlert('La operación ha sido revertida. La factura vuelve a estar disponible para adelanto.', 'Reversión Exitosa');
     }, "Revertir Operación");
+}
+function renderUsers() {
+    const tbody = document.getElementById('users-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    abmUsers.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${u.nombre}</td>
+            <td>${u.apellido}</td>
+            <td>${u.email}</td>
+            <td>${u.tel}</td>
+            <td>${u.ente}</td>
+            <td><span class="badge-moneda gs">${u.tipo}</span></td>
+            <td>
+                <button class="btn-secondary btn-sm" onclick="showCustomAlert('Edición de usuario en desarrollo')"><i class="ph ph-pencil-simple"></i></button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function renderRoles() {
+    const tbody = document.getElementById('roles-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    abmRoles.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><span class="badge-egp">${r.dominio}</span></td>
+            <td><strong>${r.rol}</strong></td>
+            <td style="font-size:12px;">${r.permisos}</td>
+            <td>
+                <button class="btn-secondary btn-sm" onclick="showCustomAlert('Edición de rol en desarrollo')"><i class="ph ph-pencil-simple"></i></button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function openUserModal() {
+    const select = document.getElementById('u-ente');
+    select.innerHTML = '<option value="Banco Atlas">Banco Atlas</option>';
+    participants.forEach(p => {
+        select.innerHTML += `<option value="${p.razon}">${p.razon}</option>`;
+    });
+    openModal('user-modal');
+}
+
+function submitUser() {
+    const user = {
+        id: abmUsers.length + 1,
+        nombre: document.getElementById('u-nombre').value,
+        apellido: document.getElementById('u-apellido').value,
+        email: document.getElementById('u-email').value,
+        tel: '+595 ...',
+        ente: document.getElementById('u-ente').value,
+        tipo: document.getElementById('u-tipo').value
+    };
+    abmUsers.push(user);
+    renderUsers();
+    closeModal('user-modal');
+    switchAbmTab('usuarios');
+    showCustomAlert('Usuario creado correctamente');
+}
+
+function openRoleModal() {
+    openModal('role-modal');
+}
+
+function submitRole() {
+    const role = {
+        id: abmRoles.length + 1,
+        dominio: document.getElementById('r-dominio').value,
+        rol: document.getElementById('r-nombre').value,
+        permisos: document.getElementById('r-permisos').value
+    };
+    abmRoles.push(role);
+    renderRoles();
+    closeModal('role-modal');
+    switchAbmTab('roles');
+    showCustomAlert('Rol creado correctamente');
 }
